@@ -69,7 +69,6 @@ private:
     std::shared_ptr<CameraComponent> m_cameraComponent = std::make_shared<CameraComponent>( 90.0f, 0.01, 1000, "meow" );
 };
 
-
 int main()
 {
     Application::get()->getState().m_ecs.registerSystem<CameraSystem>();
