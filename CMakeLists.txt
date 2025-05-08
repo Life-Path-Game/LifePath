@@ -3,11 +3,11 @@ cmake_minimum_required(VERSION 3.28)
 project(LifePathGame)
 
 # Gather all resources
-set(GAME_RESOURCE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/resource)
-set(GAME_RESOURCE_DEST_DIR ${CMAKE_BINARY_DIR}/resource)
+set(GAME_RESOURCE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/resources)
+set(GAME_RESOURCE_DEST_DIR ${CMAKE_BINARY_DIR}/resources)
 
-set(FINAL_RESOURCE_SOURCE_DIR ${CMAKE_BINARY_DIR}/resource)
-set(FINAL_RESOURCE_DEST_DIR ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}/resource)
+set(FINAL_RESOURCE_SOURCE_DIR ${CMAKE_BINARY_DIR}/resources)
+set(FINAL_RESOURCE_DEST_DIR ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}/resources)
 
 # Create game executable
 add_executable(${PROJECT_NAME}
