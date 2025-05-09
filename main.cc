@@ -80,7 +80,8 @@ public:
         m_cameraNode->addComponent( m_scriptComponent );
         getRoot().addChild( m_cameraNode );
 
-        getRoot().addChild( loadResult.rootNode );
+
+        getRoot().addChild( loadResult.m_rootNode );
     }
 
     void update() override
@@ -96,7 +97,8 @@ private:
             ResourceManager::getShaderPath( "generic_vertex.glsl" ),
             ResourceManager::getShaderPath( "generic_fragment.glsl" )
             );
-    GLBLoader::LoadResult loadResult = GLBLoader::LoadGLB( ResourceManager::GetModelPath( "atlanta3.glb" ), m_shader );
+    GLBLoader::LoadResult loadResult = GLBLoader::loadGLB( ResourceManager::GetModelPath( "SponzaBS.glb" ), m_shader, true );
+
 
     std::shared_ptr<Node>            m_cameraNode      = std::make_shared<Node>( "Camera" );
     std::shared_ptr<CameraComponent> m_cameraComponent = std::make_shared<CameraComponent>( 45.0f, 0.1f, 100000.0f, "MainCamera" );
