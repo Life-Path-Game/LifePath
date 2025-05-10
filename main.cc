@@ -9,6 +9,7 @@
 #include "Tomos/util/renderer/Shader.hh"
 #include "Tomos/util/renderer/VertexArray.hh"
 #include "Tomos/util/resourceManager/ResourceManager.hh"
+#include "Tomos/util/imgui/ImGuiLayer.hh"
 
 using namespace Tomos;
 
@@ -17,7 +18,7 @@ class CameraMoveScript : public Script
 public:
     void update() override
     {
-        const float moveSpeed        = 5.0f * Application::getState().m_time.deltaTime(); // meters per second
+        const float moveSpeed        = 5.0f * Application::getState().m_time.deltaTime();  // meters per second
         const float mouseSensitivity = 0.001f;
 
         // Reset movement
@@ -45,7 +46,7 @@ public:
 
             yaw += delta.first;
             pitch += delta.second;
-            pitch = glm::clamp( pitch, -1.5f, 1.5f ); // Limit pitch to avoid over-rotation
+            pitch = glm::clamp( pitch, -1.5f, 1.5f );  // Limit pitch to avoid over-rotation
 
             m_node->m_transform.m_rotation = glm::quat( glm::vec3( pitch, yaw, 0.0f ) );
         }
@@ -55,67 +56,62 @@ public:
         glm::vec3 right   = m_node->m_transform.m_rotation * glm::vec3( 1.0f, 0.0f, 0.0f );
         glm::vec3 up      = m_node->m_transform.m_rotation * glm::vec3( 0.0f, 1.0f, 0.0f );
 
-        m_node->m_transform.m_translation += forward * m_movement.z +
-                right * m_movement.x +
-                up * m_movement.y;
+        m_node->m_transform.m_translation += forward * m_movement.z + right * m_movement.x + up * m_movement.y;
 
         m_node->m_transform.update();
     }
 
 private:
-    glm::vec3 m_movement{0.0f, 0.0f, 0.0f};
+    glm::vec3 m_movement{ 0.0f, 0.0f, 0.0f };
 };
 
 class MainScene : public Scene
 {
 public:
-    MainScene() :
-        Scene( "Main" )
+    MainScene() : Scene( "Main" )
     {
         // Camera setup
         m_cameraComponent->m_active             = true;
-        m_cameraNode->m_transform.m_translation = {0.0f, 2.0f, 10.0f}; // Start 10m back and 2m up
+        m_cameraNode->m_transform.m_translation = { 0.0f, 2.0f, 10.0f };  // Start 10m back and 2m up
         m_cameraNode->m_transform.update();
         m_cameraNode->addComponent( m_cameraComponent );
         m_cameraNode->addComponent( m_scriptComponent );
         getRoot().addChild( m_cameraNode );
-
 
         getRoot().addChild( loadResult.m_rootNode );
     }
 
     void update() override
     {
-        Renderer::setClearedColor( {0.2f, 0.3f, 0.4f, 1.0f} );
+        Renderer::setClearedColor( { 0.2f, 0.3f, 0.4f, 1.0f } );
         Renderer::clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
         Scene::update();
     }
 
 private:
-    std::shared_ptr<Shader> m_shader = std::make_shared<Shader>(
-            ResourceManager::getShaderPath( "generic_vertex.glsl" ),
-            ResourceManager::getShaderPath( "generic_fragment.glsl" )
-            );
+    std::shared_ptr<Shader> m_shader =
+            std::make_shared<Shader>( ResourceManager::getShaderPath( "generic_vertex.glsl" ), ResourceManager::getShaderPath( "generic_fragment.glsl" ) );
     GLBLoader::LoadResult loadResult = GLBLoader::loadGLB( ResourceManager::GetModelPath( "SponzaBS.glb" ), m_shader, true );
 
 
     std::shared_ptr<Node>            m_cameraNode      = std::make_shared<Node>( "Camera" );
-    std::shared_ptr<CameraComponent> m_cameraComponent = std::make_shared<CameraComponent>( 45.0f, 0.1f, 100000.0f, "MainCamera" );
-    std::shared_ptr<ScriptComponent> m_scriptComponent = std::make_shared<ScriptComponent>(
-            std::make_shared<CameraMoveScript>(), "CameraMoveScript"
-            );
+    std::shared_ptr<CameraComponent> m_cameraComponent = std::make_shared<CameraComponent>( 45.0f, 0.1f, 32.0f, "MainCamera" );
+    std::shared_ptr<ScriptComponent> m_scriptComponent = std::make_shared<ScriptComponent>( std::make_shared<CameraMoveScript>(), "CameraMoveScript" );
 };
 
 int main()
 {
+    Application::init( WindowProps( "Demo App", 1280, 720, false, 16.0 / 9.0 ) );
+
     Application::getState().m_ecs.registerSystem<CameraSystem>();
     Application::getState().m_ecs.registerSystem<ScriptSystem>();
     Application::getState().m_ecs.registerSystem<MeshSystem>();
 
     auto layer = new Layer( "main" );
     layer->getSceneManager() << std::make_shared<MainScene>();
-    Application::getState().m_layerStack.pushLayer( layer );
+    Application::get()->pushLayer( layer );
+//    Application::get()->pushOverlay( new ImGuiLayer() );
 
     Application::get()->run();
 
