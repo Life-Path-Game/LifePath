@@ -16,9 +16,14 @@ using namespace Tomos;
 class CameraMoveScript : public Script
 {
 public:
+    CameraMoveScript()
+    {
+        Application::get()->getWindow().setCursorMode( Window::CursorMode::Disabled );
+    }
+
     void update() override
     {
-        const float moveSpeed        = 5.0f * Application::getState().m_time.deltaTime();  // meters per second
+        const float moveSpeed        = 5.0f * Application::getState().m_time.deltaTime(); // meters per second
         const float mouseSensitivity = 0.001f;
 
         // Reset movement
@@ -32,24 +37,20 @@ public:
         if ( Application::getState().m_input.isKeyDown( GLFW_KEY_SPACE ) ) m_movement.y += moveSpeed;
         if ( Application::getState().m_input.isKeyDown( GLFW_KEY_LEFT_SHIFT ) ) m_movement.y -= moveSpeed;
 
-        // Mouse look
-        if ( Application::getState().m_input.isMouseDown( GLFW_MOUSE_BUTTON_1 ) )
-        {
-            auto delta = Application::getState().m_input.getMouseDelta();
-            delta.first *= -mouseSensitivity;
-            delta.second *= -mouseSensitivity;
+        // Mouse look (always active in FPS mode)
+        auto delta = Application::getState().m_input.getMouseDelta();
+        delta.first *= -mouseSensitivity;
+        delta.second *= -mouseSensitivity;
 
-            glm::vec3 euler = glm::eulerAngles( m_node->m_transform.m_rotation );
-            float     yaw   = euler.y;
-            float     pitch = euler.x;
+        glm::vec3 euler = glm::eulerAngles( m_node->m_transform.m_rotation );
+        float     yaw   = euler.y;
+        float     pitch = euler.x;
 
+        yaw += delta.first;
+        pitch += delta.second;
+        pitch = glm::clamp( pitch, -1.5f, 1.5f ); // Limit pitch to avoid over-rotation
 
-            yaw += delta.first;
-            pitch += delta.second;
-            pitch = glm::clamp( pitch, -1.5f, 1.5f );  // Limit pitch to avoid over-rotation
-
-            m_node->m_transform.m_rotation = glm::quat( glm::vec3( pitch, yaw, 0.0f ) );
-        }
+        m_node->m_transform.m_rotation = glm::quat( glm::vec3( pitch, yaw, 0.0f ) );
 
         // Apply movement
         glm::vec3 forward = m_node->m_transform.m_rotation * glm::vec3( 0.0f, 0.0f, -1.0f );
@@ -57,22 +58,22 @@ public:
         glm::vec3 up      = m_node->m_transform.m_rotation * glm::vec3( 0.0f, 1.0f, 0.0f );
 
         m_node->m_transform.m_translation += forward * m_movement.z + right * m_movement.x + up * m_movement.y;
-
         m_node->m_transform.update();
     }
 
 private:
-    glm::vec3 m_movement{ 0.0f, 0.0f, 0.0f };
+    glm::vec3 m_movement{0.0f, 0.0f, 0.0f};
 };
 
 class MainScene : public Scene
 {
 public:
-    MainScene() : Scene( "Main" )
+    MainScene( int p_layerId ) :
+        Scene( p_layerId, "Main" )
     {
         // Camera setup
         m_cameraComponent->m_active             = true;
-        m_cameraNode->m_transform.m_translation = { 0.0f, 2.0f, 10.0f };  // Start 10m back and 2m up
+        m_cameraNode->m_transform.m_translation = {0.0f, 2.0f, 10.0f}; // Start 10m back and 2m up
         m_cameraNode->m_transform.update();
         m_cameraNode->addComponent( m_cameraComponent );
         m_cameraNode->addComponent( m_scriptComponent );
@@ -83,9 +84,6 @@ public:
 
     void update() override
     {
-        Renderer::setClearedColor( { 0.2f, 0.3f, 0.4f, 1.0f } );
-        Renderer::clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
         Scene::update();
     }
 
@@ -104,14 +102,15 @@ int main()
 {
     Application::init( WindowProps( "Demo App", 1280, 720, false, 16.0 / 9.0 ) );
 
+    Application::getState().m_ecs.registerSystem<MeshSystem>();
     Application::getState().m_ecs.registerSystem<CameraSystem>();
     Application::getState().m_ecs.registerSystem<ScriptSystem>();
-    Application::getState().m_ecs.registerSystem<MeshSystem>();
 
     auto layer = new Layer( "main" );
-    layer->getSceneManager() << std::make_shared<MainScene>();
+
+    layer->getSceneManager() << std::make_shared<MainScene>( layer->getLayerId() );
     Application::get()->pushLayer( layer );
-//    Application::get()->pushOverlay( new ImGuiLayer() );
+    Application::get()->pushOverlay( new ImGuiLayer() );
 
     Application::get()->run();
 
