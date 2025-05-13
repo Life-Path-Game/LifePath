@@ -10,6 +10,7 @@
 #include "Tomos/util/renderer/VertexArray.hh"
 #include "Tomos/util/resourceManager/ResourceManager.hh"
 #include "Tomos/util/imgui/ImGuiLayer.hh"
+#include "Tomos/util/renderer/passes/mesh/GeometryPass.hh"
 
 using namespace Tomos;
 
@@ -23,22 +24,22 @@ public:
 
     void update() override
     {
-        const float moveSpeed        = 5.0f * Application::getState().m_time.deltaTime(); // meters per second
+        const float moveSpeed        = 5.0f * Application::getState().time().deltaTime(); // meters per second
         const float mouseSensitivity = 0.001f;
 
         // Reset movement
         m_movement = glm::vec3( 0.0f );
 
         // Handle WASD movement
-        if ( Application::getState().m_input.isKeyDown( GLFW_KEY_W ) ) m_movement.z += moveSpeed;
-        if ( Application::getState().m_input.isKeyDown( GLFW_KEY_S ) ) m_movement.z -= moveSpeed;
-        if ( Application::getState().m_input.isKeyDown( GLFW_KEY_A ) ) m_movement.x -= moveSpeed;
-        if ( Application::getState().m_input.isKeyDown( GLFW_KEY_D ) ) m_movement.x += moveSpeed;
-        if ( Application::getState().m_input.isKeyDown( GLFW_KEY_SPACE ) ) m_movement.y += moveSpeed;
-        if ( Application::getState().m_input.isKeyDown( GLFW_KEY_LEFT_SHIFT ) ) m_movement.y -= moveSpeed;
+        if ( Application::getState().input().isKeyDown( GLFW_KEY_W ) ) m_movement.z += moveSpeed;
+        if ( Application::getState().input().isKeyDown( GLFW_KEY_S ) ) m_movement.z -= moveSpeed;
+        if ( Application::getState().input().isKeyDown( GLFW_KEY_A ) ) m_movement.x -= moveSpeed;
+        if ( Application::getState().input().isKeyDown( GLFW_KEY_D ) ) m_movement.x += moveSpeed;
+        if ( Application::getState().input().isKeyDown( GLFW_KEY_SPACE ) ) m_movement.y += moveSpeed;
+        if ( Application::getState().input().isKeyDown( GLFW_KEY_LEFT_SHIFT ) ) m_movement.y -= moveSpeed;
 
         // Mouse look (always active in FPS mode)
-        auto delta = Application::getState().m_input.getMouseDelta();
+        auto delta = Application::getState().input().getMouseDelta();
         delta.first *= -mouseSensitivity;
         delta.second *= -mouseSensitivity;
 
@@ -80,6 +81,17 @@ public:
         getRoot().addChild( m_cameraNode );
 
         getRoot().addChild( loadResult.m_rootNode );
+
+        auto instance1                       = GLBLoader::createInstance( loadResult.m_rootNode );
+        instance1->m_transform.m_translation = {50.0f, 0.0f, 0.0f};
+        instance1->m_transform.update();
+
+        auto instance2                       = GLBLoader::createInstance( loadResult.m_rootNode );
+        instance2->m_transform.m_translation = {-50.0f, 0.0f, 0.0f};
+        instance2->m_transform.update();
+
+        getRoot().addChild( instance1 );
+        getRoot().addChild( instance2 );
     }
 
     void update() override
@@ -94,7 +106,7 @@ private:
 
 
     std::shared_ptr<Node>            m_cameraNode      = std::make_shared<Node>( "Camera" );
-    std::shared_ptr<CameraComponent> m_cameraComponent = std::make_shared<CameraComponent>( 45.0f, 0.1f, 32.0f, "MainCamera" );
+    std::shared_ptr<CameraComponent> m_cameraComponent = std::make_shared<CameraComponent>( 45.0f, 0.1f, 10000.0f, "MainCamera" );
     std::shared_ptr<ScriptComponent> m_scriptComponent = std::make_shared<ScriptComponent>( std::make_shared<CameraMoveScript>(), "CameraMoveScript" );
 };
 
@@ -102,15 +114,18 @@ int main()
 {
     Application::init( WindowProps( "Demo App", 1280, 720, false, 16.0 / 9.0 ) );
 
-    Application::getState().m_ecs.registerSystem<MeshSystem>();
-    Application::getState().m_ecs.registerSystem<CameraSystem>();
-    Application::getState().m_ecs.registerSystem<ScriptSystem>();
+    Application::getState().config().setSchema<BaseConfig>();
+
+    Application::getState().ecs().registerSystem<MeshSystem>();
+    Application::getState().ecs().registerSystem<CameraSystem>();
+    Application::getState().ecs().registerSystem<ScriptSystem>();
 
     auto layer = new Layer( "main" );
+    layer->addRenderPass( std::make_unique<GeometryPass>() );
 
     layer->getSceneManager() << std::make_shared<MainScene>( layer->getLayerId() );
     Application::get()->pushLayer( layer );
-    Application::get()->pushOverlay( new ImGuiLayer() );
+    // Application::get()->pushOverlay( new ImGuiLayer() );
 
     Application::get()->run();
 
