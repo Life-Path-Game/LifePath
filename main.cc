@@ -10,7 +10,7 @@
 #include "Tomos/util/renderer/VertexArray.hh"
 #include "Tomos/util/resourceManager/ResourceManager.hh"
 #include "Tomos/util/imgui/ImGuiLayer.hh"
-#include "Tomos/util/renderer/passes/mesh/GeometryPass.hh"
+#include "Tomos/util/renderer/passes/mesh/BasePass.hh"
 
 using namespace Tomos;
 
@@ -112,7 +112,7 @@ private:
 
 int main()
 {
-    Application::init( WindowProps( "Demo App", 1280, 720, false, 16.0 / 9.0 ) );
+    Application::init( WindowProps( "Demo App", 1280, 720, true, 16.0 / 9.0 ) );
 
     Application::getState().config().setSchema<BaseConfig>();
 
@@ -121,7 +121,7 @@ int main()
     Application::getState().ecs().registerSystem<ScriptSystem>();
 
     auto layer = new Layer( "main" );
-    layer->addRenderPass( std::make_unique<GeometryPass>() );
+    layer->addRenderPass( std::make_unique<BasePass>() );
 
     layer->getSceneManager() << std::make_shared<MainScene>( layer->getLayerId() );
     Application::get()->pushLayer( layer );
